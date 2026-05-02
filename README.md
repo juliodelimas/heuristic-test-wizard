@@ -94,9 +94,18 @@ After starting the API, access:
 
 The OpenAPI specification file is located at `src/docs/openapi.yaml`.
 
+## Deploy na Vercel
+
+O projeto segue [Express on Vercel](https://vercel.com/docs/frameworks/backend/express): uso de `src/server.js` como entrada, exportando o `app` quando a variável **`VERCEL`** está definida (sem `listen` na plataforma), e garantindo MongoDB por requisição com `ensureMongoConnected` para evitar corrida entre cold starts e operações Mongoose.
+
+1. Na Vercel, em **Project → Settings → Environment Variables**, configure pelo menos **`MONGODB_URI`** e **`JWT_SECRET`** (opcionalmente `JWT_EXPIRES_IN`, `BASE_URL` com o URL público da API para referência/logs).
+2. Faça redeploy para aplicar novas env vars.
+3. Localmente você pode usar [Vercel CLI](https://vercel.com/docs/cli): `npm i -g vercel`, depois **`vercel dev`** na raiz do repositório (carrega `.env`; em produção a Vercel injeta **`VERCEL=1`** automaticamente).
+
+Há um `vercel.json` mínimo na raiz; a detecção de Express não exige rotas extras. Na Vercel, arquivos em `public/` vêm pela CDN ([documentação Express + Vercel](https://vercel.com/docs/frameworks/backend/express)); **`express.static` não replica isso**.
+
 ## Next steps
 
 - Add integration/E2E tests if needed
 - Add GitHub Actions workflow for CI
-- Add Vercel deployment configuration
 - Further endpoints from Jira as needed (e.g. list/update heuristics)

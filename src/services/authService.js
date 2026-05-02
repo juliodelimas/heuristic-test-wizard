@@ -4,6 +4,8 @@ const User = require("../models/User");
 const env = require("../config/env");
 
 const DUPLICATE_EMAIL_MESSAGE = "O e-mail informado já está em uso.";
+const INVALID_CREDENTIALS_MESSAGE = "Credenciais inválidas.";
+const USER_INACTIVE_MESSAGE = "O usuário não está ativo.";
 
 const register = async ({ name, email, password }) => {
   const hashedPassword = await bcrypt.hash(password, 10);
@@ -31,14 +33,25 @@ const register = async ({ name, email, password }) => {
 };
 
 const login = async ({ email, password }) => {
-  const user = await User.findOne({ email });
+  const normalizedEmail = email.trim().toLowerCase();
+  const user = await User.findOne({ email: normalizedEmail });
   if (!user) {
-    throw new Error("Invalid credentials");
+    throw Object.assign(new Error(INVALID_CREDENTIALS_MESSAGE), {
+      code: "INVALID_CREDENTIALS",
+    });
   }
 
   const isPasswordValid = await bcrypt.compare(password, user.password);
   if (!isPasswordValid) {
-    throw new Error("Invalid credentials");
+    throw Object.assign(new Error(INVALID_CREDENTIALS_MESSAGE), {
+      code: "INVALID_CREDENTIALS",
+    });
+  }
+
+  if (!user.active) {
+    throw Object.assign(new Error(USER_INACTIVE_MESSAGE), {
+      code: "USER_INACTIVE",
+    });
   }
 
   const token = jwt.sign({ sub: user.id, email: user.email }, env.jwtSecret, {
@@ -59,4 +72,6 @@ module.exports = {
   register,
   login,
   DUPLICATE_EMAIL_MESSAGE,
+  INVALID_CREDENTIALS_MESSAGE,
+  USER_INACTIVE_MESSAGE,
 };

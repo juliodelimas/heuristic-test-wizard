@@ -87,6 +87,7 @@ paths:
     post:
       tags: [Auth]
       summary: Authenticate and get JWT
+      description: Implements SCRUM-3 (active users only; generic invalid-credentials message).
       requestBody:
         required: true
         content:
@@ -95,9 +96,33 @@ paths:
               $ref: "#/components/schemas/LoginPayload"
       responses:
         "200":
-          description: Login success
+          description: Login success — valid JWT access token for active users.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoginSuccess"
+        "400":
+          description: Validation errors when required fields are missing or malformed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationErrorResponse"
         "401":
-          description: Invalid credentials
+          description: Wrong e-mail/password combination (generic message).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+              example:
+                message: Credenciais inválidas.
+        "403":
+          description: Account exists but is not active (correct password).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+              example:
+                message: O usuário não está ativo.
   /api/users/me:
     get:
       tags: [Users]
@@ -149,6 +174,29 @@ components:
           type: string
           example: O e-mail informado já está em uso.
       required: [message]
+    MessageResponse:
+      type: object
+      properties:
+        message:
+          type: string
+      required: [message]
+    LoginSuccess:
+      type: object
+      properties:
+        token:
+          type: string
+          description: JWT access token
+        user:
+          type: object
+          properties:
+            id:
+              type: string
+            name:
+              type: string
+            email:
+              type: string
+          required: [id, name, email]
+      required: [token, user]
     RegisterPayload:
       type: object
       required: [name, email, password]

@@ -3,12 +3,16 @@ jest.mock("bcryptjs", () => ({
   hash: jest.fn().mockResolvedValue("hashed-password"),
   compare: jest.fn(),
 }));
+jest.mock("jsonwebtoken", () => ({
+  sign: jest.fn().mockReturnValue("jwt-token"),
+}));
 jest.mock("../config/env", () => ({
   jwtSecret: "test",
   jwtExpiresIn: "1h",
 }));
 
 const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 const authService = require("./authService");
 
@@ -57,5 +61,86 @@ describe("authService.register", () => {
       code: "EMAIL_IN_USE",
       message: authService.DUPLICATE_EMAIL_MESSAGE,
     });
+  });
+});
+
+describe("authService.login", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it("looks up normalized email, returns JWT and public user when active and password matches", async () => {
+    User.findOne.mockResolvedValue({
+      id: "u1",
+      name: "Ada",
+      email: "ada@example.com",
+      password: "stored-hash",
+      active: true,
+    });
+    bcrypt.compare.mockResolvedValue(true);
+
+    const result = await authService.login({
+      email: "  Ada@Example.COM  ",
+      password: "secret12",
+    });
+
+    expect(User.findOne).toHaveBeenCalledWith({ email: "ada@example.com" });
+    expect(bcrypt.compare).toHaveBeenCalledWith("secret12", "stored-hash");
+    expect(jwt.sign).toHaveBeenCalledWith(
+      { sub: "u1", email: "ada@example.com" },
+      "test",
+      { expiresIn: "1h" }
+    );
+    expect(result).toEqual({
+      token: "jwt-token",
+      user: { id: "u1", name: "Ada", email: "ada@example.com" },
+    });
+  });
+
+  it("throws INVALID_CREDENTIALS when user is not found", async () => {
+    User.findOne.mockResolvedValue(null);
+
+    await expect(
+      authService.login({ email: "missing@example.com", password: "secret12" })
+    ).rejects.toMatchObject({
+      code: "INVALID_CREDENTIALS",
+      message: authService.INVALID_CREDENTIALS_MESSAGE,
+    });
+    expect(bcrypt.compare).not.toHaveBeenCalled();
+  });
+
+  it("throws INVALID_CREDENTIALS when password does not match", async () => {
+    User.findOne.mockResolvedValue({
+      id: "u1",
+      email: "a@b.co",
+      password: "hash",
+      active: true,
+    });
+    bcrypt.compare.mockResolvedValue(false);
+
+    await expect(
+      authService.login({ email: "a@b.co", password: "wrong" })
+    ).rejects.toMatchObject({
+      code: "INVALID_CREDENTIALS",
+      message: authService.INVALID_CREDENTIALS_MESSAGE,
+    });
+  });
+
+  it("throws USER_INACTIVE after valid password when user is inactive", async () => {
+    User.findOne.mockResolvedValue({
+      id: "u1",
+      email: "a@b.co",
+      password: "hash",
+      active: false,
+    });
+    bcrypt.compare.mockResolvedValue(true);
+
+    await expect(
+      authService.login({ email: "a@b.co", password: "correct" })
+    ).rejects.toMatchObject({
+      code: "USER_INACTIVE",
+      message: authService.USER_INACTIVE_MESSAGE,
+    });
+    expect(jwt.sign).not.toHaveBeenCalled();
   });
 });

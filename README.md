@@ -62,8 +62,15 @@ npm run dev
 - `GET /api/health` - health check
 - `POST /api/users/register` - register a new visitor (nome, e-mail e senha; e-mail único; senha em hash; usuário criado como ativo) — implementation source: `SCRUM-4`
 - `POST /api/auth/register` - same behavior as `/api/users/register` (legacy alias)
-- `POST /api/auth/login` - authenticate and receive JWT
+- `POST /api/auth/login` - authenticate with e-mail e senha; retorno JWT quando o usuário existe, senha está correta e está ativo (SCRUM-3)
 - `GET /api/users/me` - protected route to fetch authenticated user profile
+
+### Login responses (SCRUM-3)
+
+- **200** — corpo inclui `token` (JWT) e `user` com `id`, `name`, `email` (sem senha).
+- **400** — `{ "errors": [ { "field", "message" }, ... ] }` quando campos obrigatórios faltam ou o e-mail está em formato inválido.
+- **401** — `{ "message": "Credenciais inválidas." }` para usuário inexistente ou senha incorreta (mensagem única para não revelar qual campo falhou).
+- **403** — `{ "message": "O usuário não está ativo." }` quando e-mail/senha estão corretos mas `active` é `false`.
 
 ### Register responses (SCRUM-4)
 

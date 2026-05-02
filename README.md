@@ -64,6 +64,14 @@ npm run dev
 - `POST /api/auth/register` - same behavior as `/api/users/register` (legacy alias)
 - `POST /api/auth/login` - authenticate with e-mail e senha; retorno JWT quando o usuário existe, senha está correta e está ativo (SCRUM-3)
 - `GET /api/users/me` - protected route to fetch authenticated user profile
+- `POST /api/heuristics` — cadastra heurística com título e descrição (autenticação obrigatória; título único por usuário; metadados de autoria — SCRUM-2). Caminho público espelha a história (`POST /heuristics` sob o prefixo `/api`).
+
+### Heuristic create responses (SCRUM-2)
+
+- **201** — heurística persistida com `createdBy` (id do criador), `createdAt` e `updatedAt` em ISO 8601; corpo também inclui `id`, `title`, `description`.
+- **400** — `{ "errors": [ { "field", "message" }, ... ] }` quando título ou descrição faltam, estão vazios após `trim`, ou não são texto.
+- **401** — mensagem JSON de não autorizado quando o cabeçalho `Authorization: Bearer …` está ausente, inválido ou expirado (via middleware JWT).
+- **409** — `{ "message": "…" }` quando já existe uma heurística com o mesmo título para o mesmo usuário.
 
 ### Login responses (SCRUM-3)
 
@@ -91,4 +99,4 @@ The OpenAPI specification file is located at `src/docs/openapi.yaml`.
 - Add integration/E2E tests if needed
 - Add GitHub Actions workflow for CI
 - Add Vercel deployment configuration
-- Implement new endpoints from Jira user stories
+- Further endpoints from Jira as needed (e.g. list/update heuristics)

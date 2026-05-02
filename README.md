@@ -21,6 +21,7 @@ src/
   models/        # mongoose schemas
   routes/        # route declarations
   services/      # business logic layer
+  utils/         # shared helpers (e.g. payload validation)
   app.js         # express app instance
   server.js      # server bootstrap
 ```
@@ -47,6 +48,7 @@ BASE_URL=http://localhost:3000
 
 - `npm start`: starts API in static mode
 - `npm run dev`: starts API with `nodemon` and auto-reload on file changes
+- `npm test`: runs unit tests (Jest)
 
 ## Running the project
 
@@ -58,9 +60,16 @@ npm run dev
 ## Endpoints in this initial scaffold
 
 - `GET /api/health` - health check
-- `POST /api/auth/register` - create user
+- `POST /api/users/register` - register a new visitor (nome, e-mail e senha; e-mail único; senha em hash; usuário criado como ativo) — implementation source: `SCRUM-4`
+- `POST /api/auth/register` - same behavior as `/api/users/register` (legacy alias)
 - `POST /api/auth/login` - authenticate and receive JWT
 - `GET /api/users/me` - protected route to fetch authenticated user profile
+
+### Register responses (SCRUM-4)
+
+- **201** — usuário criado; corpo não inclui senha; inclui `active: true`.
+- **400** — `{ "errors": [ { "field", "message" }, ... ] }` quando obrigatórios faltam ou são inválidos.
+- **409** — `{ "message": "O e-mail informado já está em uso." }` quando o e-mail já existe.
 
 ## Swagger documentation
 
@@ -72,7 +81,7 @@ The OpenAPI specification file is located at `src/docs/openapi.yaml`.
 
 ## Next steps
 
-- Add tests (unit/integration)
+- Add integration/E2E tests if needed
 - Add GitHub Actions workflow for CI
 - Add Vercel deployment configuration
 - Implement new endpoints from Jira user stories

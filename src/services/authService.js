@@ -3,20 +3,31 @@ const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 const env = require("../config/env");
 
+const DUPLICATE_EMAIL_MESSAGE = "O e-mail informado já está em uso.";
+
 const register = async ({ name, email, password }) => {
-  const existingUser = await User.findOne({ email });
-  if (existingUser) {
-    throw new Error("E-mail already in use");
-  }
-
   const hashedPassword = await bcrypt.hash(password, 10);
-  const user = await User.create({ name, email, password: hashedPassword });
+  try {
+    const user = await User.create({
+      name: name.trim(),
+      email: email.trim().toLowerCase(),
+      password: hashedPassword,
+    });
 
-  return {
-    id: user.id,
-    name: user.name,
-    email: user.email,
-  };
+    return {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      active: user.active,
+    };
+  } catch (error) {
+    if (error.code === 11000) {
+      throw Object.assign(new Error(DUPLICATE_EMAIL_MESSAGE), {
+        code: "EMAIL_IN_USE",
+      });
+    }
+    throw error;
+  }
 };
 
 const login = async ({ email, password }) => {
@@ -47,4 +58,5 @@ const login = async ({ email, password }) => {
 module.exports = {
   register,
   login,
+  DUPLICATE_EMAIL_MESSAGE,
 };

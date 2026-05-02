@@ -1,4 +1,5 @@
 const User = require("../models/User");
+const { register } = require("./registerHandler");
 
 const getProfile = async (req, res) => {
   const user = await User.findById(req.userId).select("-password");
@@ -10,5 +11,6 @@ const getProfile = async (req, res) => {
 };
 
 module.exports = {
+  register,
   getProfile,
 };

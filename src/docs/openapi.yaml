@@ -9,6 +9,7 @@ tags:
   - name: Health
   - name: Auth
   - name: Users
+  - name: Heuristics
 paths:
   /api/health:
     get:
@@ -134,6 +135,44 @@ paths:
           description: User profile
         "401":
           description: Unauthorized
+  /api/heuristics:
+    post:
+      tags: [Heuristics]
+      summary: Cadastrar heurística (usuário autenticado)
+      description: Implements SCRUM-2 — título e descrição obrigatórios; título único por usuário; registra criador e data/hora.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/HeuristicCreatePayload"
+      responses:
+        "201":
+          description: Heurística criada com metadados de autoria.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HeuristicPublic"
+        "400":
+          description: Erros de validação detalhados.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationErrorResponse"
+        "401":
+          description: Sem token Bearer válido.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "409":
+          description: Conflito — já existe heurística com o mesmo título para o usuário.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConflictMessage"
 components:
   securitySchemes:
     bearerAuth:
@@ -224,3 +263,32 @@ components:
           type: string
           format: password
           example: "123456"
+    HeuristicCreatePayload:
+      type: object
+      required: [title, description]
+      properties:
+        title:
+          type: string
+          example: Visibilidade do status do sistema
+        description:
+          type: string
+          example: O sistema deve manter o usuário informado sobre o que está acontecendo em tempo hábil.
+    HeuristicPublic:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        createdBy:
+          type: string
+          description: ID do usuário criador (ObjectId como string).
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required: [id, title, description, createdBy, createdAt, updatedAt]

@@ -28,6 +28,35 @@ paths:
   /api/auth/register:
     post:
       tags: [Auth]
+      summary: Register a new user (legacy alias; prefer /api/users/register)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterPayload"
+      responses:
+        "201":
+          description: User created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserPublic"
+        "400":
+          description: Validation errors
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationErrorResponse"
+        "409":
+          description: Email already in use
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConflictMessage"
+  /api/users/register:
+    post:
+      tags: [Users]
       summary: Register a new user
       requestBody:
         required: true
@@ -38,8 +67,22 @@ paths:
       responses:
         "201":
           description: User created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserPublic"
+        "400":
+          description: Validation errors
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationErrorResponse"
         "409":
           description: Email already in use
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConflictMessage"
   /api/auth/login:
     post:
       tags: [Auth]
@@ -73,6 +116,39 @@ components:
       scheme: bearer
       bearerFormat: JWT
   schemas:
+    UserPublic:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+        active:
+          type: boolean
+      required: [id, name, email, active]
+    ValidationErrorResponse:
+      type: object
+      properties:
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+              message:
+                type: string
+            required: [field, message]
+      required: [errors]
+    ConflictMessage:
+      type: object
+      properties:
+        message:
+          type: string
+          example: O e-mail informado já está em uso.
+      required: [message]
     RegisterPayload:
       type: object
       required: [name, email, password]
